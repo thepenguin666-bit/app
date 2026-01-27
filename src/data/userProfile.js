@@ -36,9 +36,5 @@ export const userProfile = {
             monthlyFixedExpenses: 237000
         }
     },
-    recentAnalysis: [
-        "Hafta içi doluluk oranında %15 düşüş var.",
-        "Sosyal medya etkileşimleri son ay %30 arttı.",
-        "Maliyetler alkol fiyatlarındaki artış nedeniyle %8 yükseldi."
-    ]
+    recentAnalysis: []
 };
