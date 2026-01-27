@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import './App.css'
 import AIChat from './components/AIChat'
 import Login from './components/Login'
 import DataHistory from './components/DataHistory'
+import { weeklyReports } from './data/weeklyReports'
+import { userProfile } from './data/userProfile'
 
 const sections = [
   {
@@ -40,15 +43,68 @@ const sections = [
 ]
 
 function App() {
-  const [activeSection, setActiveSection] = useState(sections[0])
+  const [chatSessions, setChatSessions] = useState([])
+  const [activeSessionId, setActiveSessionId] = useState(null)
+  const [activeSection, setActiveSection] = useState(null) // Start hidden
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatInitialContext, setChatInitialContext] = useState(null)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null) // Restore Login
 
   if (!user) {
     return <Login onLogin={setUser} />
   }
+
+  // Helper to create a new session
+  const createNewSession = (initialContext, initialMessages = []) => {
+    const newSession = {
+      id: Date.now(),
+      title: initialContext?.topic || 'Yeni Sohbet',
+      date: new Date().toLocaleDateString('tr-TR'),
+      context: initialContext,
+      messages: initialMessages
+    };
+    setChatSessions(prev => [newSession, ...prev]);
+    setActiveSessionId(newSession.id);
+    return newSession;
+  };
+
+  // Helper to load report or open existing session
+  const handleDetailClick = (detail) => {
+    const context = { type: 'report', topic: detail };
+
+    // Find existing sessions for this topic
+    const existingSession = chatSessions.find(s => s.context?.topic === detail);
+
+    if (existingSession) {
+      setActiveSessionId(existingSession.id);
+    } else {
+      // Create new session with report
+      const reportContent = weeklyReports[detail] || "Bu başlık için henüz haftalık rapor hazırlanmadı.";
+      const initialMessages = [
+        { role: 'assistant', content: reportContent },
+        { role: 'assistant', content: "Bu haftaki raporunuz bu şekilde. Herhangi bir sorunuz var mı?" }
+      ];
+      createNewSession(context, initialMessages);
+    }
+
+    setChatInitialContext(context);
+    setIsChatOpen(true);
+  };
+
+  const handleGeneralChat = () => {
+    setChatInitialContext(null);
+    const lastGeneral = chatSessions.find(s => !s.context || s.context.type !== 'report');
+    if (lastGeneral) {
+      setActiveSessionId(lastGeneral.id);
+    } else {
+      createNewSession(null);
+    }
+    setIsChatOpen(true);
+  }
+
+  // Get active session data
+  const activeSession = chatSessions.find(s => s.id === activeSessionId) || { messages: [] };
 
   return (
     <div className="app-container">
@@ -63,7 +119,7 @@ function App() {
         {sections.map((section) => (
           <div
             key={section.id}
-            className={`nav-button ${activeSection.id === section.id ? 'active' : ''}`}
+            className={`nav-button ${activeSection?.id === section.id ? 'active' : ''}`}
             onClick={() => setActiveSection(section)}
           >
             <span className="icon">{section.icon}</span>
@@ -72,68 +128,44 @@ function App() {
         ))}
       </div>
 
-      <div className="content-area">
-        <h2 style={{ marginBottom: '15px', color: activeSection.id === 'income' ? '#fff' : 'inherit' }}>
-          {activeSection.title}
-        </h2>
-        <p style={{ color: 'var(--text-dim)', fontSize: '1.1rem', marginBottom: '25px' }}>
-          {activeSection.description}
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {activeSection.details.map((detail, index) => (
-            <div
-              key={index}
-              onClick={() => {
-                setChatInitialContext({ type: 'report', topic: detail });
-                setIsChatOpen(true);
-              }}
-              style={{
-                padding: '15px 20px',
-                background: 'rgba(255,255,255,0.05)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255,255,255,0.05)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                e.currentTarget.style.transform = 'translateX(5px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
+      {activeSection && (
+        <div className="content-area" key={activeSection.id}>
+          <h2 style={{ marginBottom: '15px', color: activeSection.id === 'income' ? '#fff' : 'inherit' }}>
+            {activeSection.title}
+          </h2>
+          <p className="section-description">
+            {activeSection.description}
+          </p>
+          <div className="detail-list">
+            {activeSection.details.map((detail, index) => (
+              <div
+                key={index}
+                className="detail-button"
+                onClick={() => handleDetailClick(detail)}
+              >
+                <span className="detail-bullet">•</span>
+                {detail}
+              </div>
+            ))}
+          </div>
+
+          <div className="action-group">
+            <button
+              className="action-btn"
+              onClick={handleGeneralChat}
             >
-              <span style={{ color: 'var(--primary-gold)' }}>•</span>
-              {detail}
-            </div>
-          ))}
+              Uzmanla Görüş
+            </button>
+
+            <button
+              className="action-btn"
+              onClick={() => setIsHistoryOpen(true)}
+            >
+              Haftalık Veri Analizi
+            </button>
+          </div>
         </div>
-
-        <button
-          className="action-btn"
-          onClick={() => {
-            setChatInitialContext(null); // General context
-            setIsChatOpen(true);
-          }}
-        >
-          Uzmanla Görüş
-        </button>
-
-        {/* Data History Button - Only visible in 'income' section or generally available */}
-        {activeSection.id === 'income' && (
-          <button
-            className="action-btn"
-            style={{ marginTop: '10px' }}
-            onClick={() => setIsHistoryOpen(true)}
-          >
-            Haftalık Veri Analizi
-          </button>
-        )}
-      </div>
+      )}
 
       {isHistoryOpen && (
         <DataHistory
@@ -145,9 +177,32 @@ function App() {
 
       {isChatOpen && (
         <AIChat
-          activeContext={activeSection.id}
+          activeContext={activeSection?.id || 'general'}
           initialContext={chatInitialContext}
           user={user}
+          sessions={chatSessions}
+          activeSessionId={activeSessionId}
+          onSwitchSession={(id) => setActiveSessionId(id)}
+          onNewSession={() => {
+            const context = activeSession.context || chatInitialContext;
+            let initialMessages = [];
+            if (context?.type === 'report') {
+              const reportContent = weeklyReports[context.topic] || "Rapor yükleniyor...";
+              initialMessages = [
+                { role: 'assistant', content: reportContent },
+                { role: 'assistant', content: "Bu haftaki raporunuz bu şekilde. Herhangi bir sorunuz var mı?" }
+              ];
+            }
+            createNewSession(context, initialMessages);
+          }}
+          currentMessages={activeSession.messages}
+          onUpdateHistory={(newMessages) => {
+            setChatSessions(prev => prev.map(session =>
+              session.id === activeSessionId
+                ? { ...session, messages: newMessages }
+                : session
+            ));
+          }}
           onClose={() => setIsChatOpen(false)}
         />
       )}
