@@ -65,6 +65,8 @@ function App() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatInitialContext, setChatInitialContext] = useState(null)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   const [currentView, setCurrentView] = useState(() => {
     const savedUser = localStorage.getItem('growth_ai_user');
@@ -107,12 +109,26 @@ function App() {
   if (currentView === 'register') {
     return <Register
       onRegister={(regData) => {
-        setUser(regData);
+        const newUser = { ...regData, id: Date.now().toString() };
+        setUser(newUser);
         setAllUsers(prev => {
-          if (!prev.find(u => u.businessName === regData.businessName)) {
-            return [...prev, regData];
+          const existingIndex = prev.findIndex(u =>
+            (u.username && u.username.toLowerCase() === regData.username?.toLowerCase()) ||
+            (u.businessName.toLowerCase() === regData.businessName.toLowerCase())
+          );
+
+          let newList;
+          if (existingIndex >= 0) {
+            // Update existing user with new info (like username) but preserve their ID if possible or merge
+            const existing = prev[existingIndex];
+            newList = [...prev];
+            newList[existingIndex] = { ...existing, ...newUser, id: existing.id || newUser.id };
+          } else {
+            newList = [...prev, newUser];
           }
-          return prev;
+
+          localStorage.setItem('growth_ai_all_users', JSON.stringify(newList));
+          return newList;
         });
         setCurrentView('onboarding');
       }}
@@ -125,9 +141,13 @@ function App() {
       onComplete={(onboardData) => {
         const updatedUser = { ...user, ...onboardData };
         setUser(updatedUser);
-        setAllUsers(prev => prev.map(u =>
-          u.businessName === user.businessName ? updatedUser : u
-        ));
+        setAllUsers(prev => {
+          const newList = prev.map(u =>
+            (u.id && u.id === updatedUser.id) || (u.businessName === user.businessName) ? updatedUser : u
+          );
+          localStorage.setItem('growth_ai_all_users', JSON.stringify(newList));
+          return newList;
+        });
         setCurrentView('dashboard');
       }}
     />
@@ -187,13 +207,13 @@ function App() {
   }
 
   const handleLogout = () => {
-    localStorage.clear();
+    // DO NOT use localStorage.clear() as it wipes the user registry
     setUser(null);
     setChatSessions([]);
-    setCurrentView('login');
     setActiveSection(null);
     setIsChatOpen(false);
     setIsHistoryOpen(false);
+    setIsSettingsOpen(false);
   };
 
   // Get active session data
@@ -201,66 +221,130 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="header">
-        <button className="logout-btn-header" onClick={handleLogout}>Çıkış Yap</button>
-        <h1>AI Business Growth</h1>
-        <p style={{ color: 'var(--primary-gold)', marginTop: '5px' }}>
-          Hoşgeldiniz, {user.businessName}
-        </p>
-      </header>
-
-      <div className="button-grid">
-        {sections.map((section) => (
+      <div className="dashboard-container">
+        {/* Profile Section (Absolute Top Left) */}
+        <div style={{ position: 'absolute', top: '0px', left: '0px', zIndex: 100 }}>
           <div
-            key={section.id}
-            className={`nav-button ${activeSection?.id === section.id ? 'active' : ''}`}
-            onClick={() => setActiveSection(section)}
+            className="user-profile-header"
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
           >
-            <span className="icon">{section.icon}</span>
-            <h3>{section.title}</h3>
-          </div>
-        ))}
-      </div>
-
-      {activeSection && (
-        <div className="content-area" key={activeSection.id}>
-          <h2 style={{ marginBottom: '15px', color: activeSection.id === 'income' ? '#fff' : 'inherit' }}>
-            {activeSection.title}
-          </h2>
-          <p className="section-description">
-            {activeSection.description}
-          </p>
-          <div className="detail-list">
-            {activeSection.details.map((detail, index) => (
-              <div
-                key={index}
-                className="detail-button"
-                onClick={() => handleDetailClick(detail)}
-              >
-                <span className="detail-bullet">•</span>
-                {detail}
-              </div>
-            ))}
-          </div>
-
-          <div className="action-group">
-            <button
-              className="action-btn"
-              onClick={handleGeneralChat}
-            >
-              Uzmanla Görüş
-            </button>
-
-            <button
-              className="action-btn"
-              onClick={() => setIsHistoryOpen(true)}
-              style={{ background: 'var(--gold-gradient)', color: '#000', fontWeight: 'bold' }}
-            >
-              Aylık Veri Analizi
-            </button>
+            <div className="profile-icon"></div>
+            <div className="profile-details" style={{ textAlign: 'center' }}>
+              <h2 className="profile-name" style={{ fontSize: '0.9rem', marginBottom: '0' }}>{user.businessName}</h2>
+              {isProfileOpen && (
+                <div className="profile-id" style={{ marginTop: '5px', justifyContent: 'center' }}>
+                  <span>TR9148...34</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Settings Button (Absolute Top Right) */}
+        <div style={{ position: 'absolute', top: '0px', right: '0px', zIndex: 100 }}>
+          <button className="settings-btn" onClick={() => setIsSettingsOpen(!isSettingsOpen)}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+
+          {isSettingsOpen && (
+            <div className="settings-dropdown">
+              <div className="dropdown-header-info">
+                <div className="dd-name">{user.businessName}</div>
+                <div className="dd-id">TR9148...34 - {user.username || 'Kullanıcı'}</div>
+              </div>
+              <button className="dropdown-logout-btn" onClick={handleLogout}>
+                Çıkış Yap
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* BODO Branding (Moved below top bar) */}
+        <div className="bodo-branding" style={{ textAlign: 'center', marginBottom: '5px' }}>
+          <img src="/BODO.svg" alt="BODO" className="header-logo" style={{ height: '40px', marginBottom: '10px' }} />
+          <p style={{ color: 'var(--primary-gold)', marginTop: '5px', fontSize: '1.1rem', fontWeight: '500' }}>
+            AI destekli İşletme Profili
+          </p>
+        </div>
+
+        {/* Custom Dashboard Hero */}
+        <div className="dashboard-hero">
+          <div className="hero-label">Aylık ortalama net gelir</div>
+          <div className="hero-value">₺{user.totalProfit || "63.345,67"}</div>
+          <div className="hero-trend">
+            <span>+8.987,97</span>
+            <span className="trend-text-dim">( bu ay <span className="trend-highlight">+%5.7</span> artış )</span>
+          </div>
+          <button className="hero-action-btn" onClick={() => setIsHistoryOpen(true)}>Bu Ayın Veri Analizi</button>
+        </div>
+
+        {/* Circular Actions */}
+        <div className="actions-grid">
+          <div className="action-circle-item" onClick={() => setIsHistoryOpen(true)}>
+            <div className="action-circle-btn">+</div>
+            <div className="action-label">Sisteme<br />Veri Ekle</div>
+          </div>
+          <div className="action-circle-item" onClick={() => setIsHistoryOpen(true)}>
+            <div className="action-circle-btn">✎</div>
+            <div className="action-label">Verileri<br />Düzenle</div>
+          </div>
+          <div className="action-circle-item" onClick={() => alert('Rapor indiriliyor...')}>
+            <div className="action-circle-btn">↓</div>
+            <div className="action-label">Verileri<br />İndir</div>
+          </div>
+        </div>
+
+        {/* AI Assistant Card */}
+        <div className="ai-assistant-card">
+          <div className="ai-hint-text">
+            <div className="ai-icon-bg">✨</div>
+            <span>Yeni gelir/gider stratejisi geliştirmek için;</span>
+          </div>
+          <button className="ai-chat-btn" onClick={handleGeneralChat}>
+            Bodo Asistan'a sor!
+          </button>
+          <div className="ai-footer-link" onClick={() => handleDetailClick('income')}>
+            Bu ayın gelir gider dağılımını görmek için <span>Tıkla →</span>
+          </div>
+        </div>
+
+        {/* Product List */}
+        <div className="dashboard-products">
+          {(user.productList && user.productList.length > 0 ? user.productList : [
+            /* Mock data if empty list but user logged in (fallback) */
+            { id: 1, name: 'Rotring xyz', price: 190, cost: 40, quantity: 24 },
+            { id: 2, name: 'Mona Lisa Defter', price: 390, cost: 30, quantity: 10 },
+            { id: 3, name: 'XYZ oyuncakk', price: 710, cost: 50, quantity: 2 },
+          ]).map(p => {
+            // Calculate fake trend for demo
+            const isPos = p.price > 300;
+            const cost = Number(p.cost) || 0;
+            const unitProfit = Number(p.price) - cost; // Simplified if cost is absolute, or p.price * (1 - p.cost/100)
+            // Assuming p.cost is percentage based on previous logic, but let's use a safe calc
+            const total = Number(p.price) * Number(p.quantity);
+
+            return (
+              <div key={p.id} className="product-item">
+                <div className="product-icon-circle" style={{ fontSize: '1.5rem' }}>+</div>
+                <div className="product-info">
+                  <div className="product-name">{p.name}</div>
+                  <div className="product-meta">Kalan stok: {Math.floor(Math.random() * 50) + 5}</div>
+                </div>
+                <div className="product-values">
+                  <div className="product-total">{p.quantity} adet / ₺{total.toLocaleString('tr-TR')}</div>
+                  <div className={isPos ? "product-trend trend-pos" : "product-trend trend-neg"}>
+                    (bu ay) {isPos ? '▲ %15' : '▼ %10'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {isHistoryOpen && (
         <DataHistory
@@ -268,7 +352,7 @@ function App() {
           onUpdate={(updatedUser) => {
             setUser(updatedUser);
             setAllUsers(prev => prev.map(u =>
-              u.businessName === user.businessName ? updatedUser : u
+              (u.id && u.id === updatedUser.id) || (u.businessName === user.businessName) ? updatedUser : u
             ));
           }}
           onClose={() => setIsHistoryOpen(false)}

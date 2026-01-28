@@ -11,7 +11,10 @@ const Login = ({ allUsers, onLogin, onShowRegister }) => {
         e.preventDefault();
 
         // Check registered users
-        const existingUser = (allUsers || []).find(u => u.businessName.toLowerCase() === username.toLowerCase());
+        const existingUser = (allUsers || []).find(u =>
+            (u.username && u.username.toLowerCase() === username.toLowerCase()) ||
+            (u.businessName.toLowerCase() === username.toLowerCase())
+        );
 
         if (existingUser) {
             onLogin(existingUser);

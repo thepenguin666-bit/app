@@ -3,6 +3,7 @@ import logo from '../assets/logo.png';
 
 const Register = ({ onRegister, onBackToLogin }) => {
     const [formData, setFormData] = useState({
+        username: '',
         fullName: '',
         businessName: '',
         businessType: '',
@@ -23,6 +24,17 @@ const Register = ({ onRegister, onBackToLogin }) => {
                 <p className="login-subtitle">İşletmenizi büyütmeye bugün başlayın.</p>
 
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '15px', textAlign: 'left' }}>
+                    <div className="input-group">
+                        <label style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Kullanıcı Adı (Giriş İçin)</label>
+                        <input
+                            type="text"
+                            className="login-input"
+                            placeholder="Örn: baris123"
+                            required
+                            value={formData.username}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        />
+                    </div>
                     <div className="input-group">
                         <label style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Ad Soyad</label>
                         <input

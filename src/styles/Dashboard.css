@@ -1,0 +1,241 @@
+/* --- New Dashboard Styles --- */
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    padding-bottom: 80px;
+    /* Space for footer/scroll */
+}
+
+/* Hero Section */
+.dashboard-hero {
+    text-align: center;
+    padding: 30px 20px;
+    background: radial-gradient(circle at center, rgba(16, 16, 20, 0) 0%, rgba(16, 16, 20, 0.8) 100%);
+}
+
+.hero-label {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.hero-value {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -1px;
+    margin: 10px 0;
+}
+
+.hero-trend {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.trend-up {
+    color: #4ade80;
+    /* Green */
+    font-weight: 600;
+}
+
+/* Main Action Button (Gold) */
+.hero-action-btn {
+    background: var(--gold-gradient);
+    color: #000;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--gold-glow);
+}
+
+.hero-action-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+/* Circular Actions Grid */
+.actions-grid {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin: 10px 0;
+}
+
+.action-circle-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.action-circle-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    /* Dark glass */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    color: #fff;
+    transition: var(--transition);
+}
+
+.action-circle-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary-gold);
+}
+
+.action-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* AI Assistant Card */
+.ai-assistant-card {
+    background: linear-gradient(135deg, #1e1e24 0%, #121214 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.ai-hint-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+.ai-icon-bg {
+    background: #a855f7;
+    /* Purple */
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.ai-chat-btn {
+    width: 100%;
+    background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%);
+    /* Purple gradient */
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+}
+
+.ai-chat-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.ai-footer-link {
+    display: block;
+    text-align: center;
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    cursor: pointer;
+}
+
+.ai-footer-link span {
+    color: #a855f7;
+    font-weight: 600;
+}
+
+/* Product List */
+.dashboard-products {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.product-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.product-icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    color: #fff;
+}
+
+.product-info {
+    flex: 1;
+}
+
+.product-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.product-meta {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+.product-values {
+    text-align: right;
+}
+
+.product-total {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+}
+
+.product-trend {
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+.trend-pos {
+    color: #4ade80;
+}
+
+.trend-neg {
+    color: #f87171;
+}
