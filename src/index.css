@@ -46,6 +46,7 @@ body {
   gap: 20px;
   overflow-y: auto;
   scroll-behavior: smooth;
+  background: radial-gradient(circle at center, rgba(16, 16, 20, 0) 0%, rgba(16, 16, 20, 0.8) 100%);
 }
 
 .header {
@@ -823,7 +824,7 @@ body {
 .dashboard-hero {
   text-align: center;
   padding: 20px 20px 0px;
-  background: radial-gradient(circle at center, rgba(16, 16, 20, 0) 0%, rgba(16, 16, 20, 0.8) 100%);
+  /* Background moved to app-container for seamless look */
 }
 
 .hero-label {

@@ -5,6 +5,8 @@ import Login from './components/Login'
 import Register from './components/Register'
 import Onboarding from './components/Onboarding'
 import DataHistory from './components/DataHistory'
+import SalesTable from './components/SalesTable' // 1. Import SalesTable
+
 import { weeklyReports } from './data/weeklyReports'
 import { userProfile } from './data/userProfile'
 
@@ -67,6 +69,7 @@ function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isSalesTableOpen, setIsSalesTableOpen] = useState(false)
 
   const [currentView, setCurrentView] = useState(() => {
     const savedUser = localStorage.getItem('growth_ai_user');
@@ -215,6 +218,51 @@ function App() {
     setIsHistoryOpen(false);
     setIsSettingsOpen(false);
   };
+  const handleMonthlyAnalysis = () => {
+    const analysisSessionId = 'monthly-analysis';
+    const existingSession = chatSessions.find(s => s.id === analysisSessionId);
+
+    if (existingSession) {
+      setActiveSessionId(analysisSessionId);
+      setIsChatOpen(true);
+      return;
+    }
+
+    // Generate Initial AI Analysis
+    const totalRevenue = (user.productList || []).reduce((acc, p) => acc + (Number(p.price) * Number(p.quantity)), 0);
+    const totalExpenses = Number(user.rent || 0) + Number(user.totalSalaries || 0) + Number(user.otherExpenses || 0) + (user.additionalExpenses || []).reduce((acc, cat) => acc + (cat.items || []).reduce((sum, item) => sum + Number(item.cost), 0), 0);
+    const netProfit = totalRevenue - totalExpenses;
+    const topProduct = (user.productList || []).sort((a, b) => b.quantity - a.quantity)[0];
+
+    const analysisMessage = `
+**${new Date().toLocaleString('tr-TR', { month: 'long', year: 'numeric' })} Veri Analizi Raporu** 📊
+
+İşletmenizin bu ayki performansını inceledim. İşte öne çıkan detaylar:
+
+🔹 **Finansal Durum:**
+*   **Toplam Ciro:** ${totalRevenue.toLocaleString('tr-TR')} ₺
+*   **Sabit Giderler:** ${totalExpenses.toLocaleString('tr-TR')} ₺
+*   **Tahmini Net Kar:** ${netProfit.toLocaleString('tr-TR')} ₺
+
+🔹 **Satış Performansı:**
+Bu ay en çok ilgi gören ürününüz **${topProduct ? topProduct.name : 'Belirtilmemiş'}** oldu. Stok yönetiminde bu ürüne öncelik vermeniz nakit akışınızı hızlandırabilir.
+
+💡 **Yapay Zeka Önerisi:**
+Kar marjınızı artırmak için düşük performanslı ürünlerde kampanya yapmayı veya sabit giderlerinizi optimize etmeyi düşünebilirsiniz. Detaylı strateji için bana sorular sorabilirsiniz!
+    `.trim();
+
+    const newSession = {
+      id: analysisSessionId,
+      title: 'Bu Ayın Veri Analizi',
+      date: new Date().toLocaleDateString('tr-TR'),
+      messages: [{ role: 'assistant', content: analysisMessage }],
+      context: { type: 'analysis', topic: 'monthly' }
+    };
+
+    setChatSessions(prev => [newSession, ...prev]);
+    setActiveSessionId(analysisSessionId);
+    setIsChatOpen(true);
+  };
 
   // Get active session data
   const activeSession = chatSessions.find(s => s.id === activeSessionId) || { messages: [] };
@@ -279,7 +327,7 @@ function App() {
             <span>+8.987,97</span>
             <span className="trend-text-dim">( bu ay <span className="trend-highlight">+%5.7</span> artış )</span>
           </div>
-          <button className="hero-action-btn" onClick={() => setIsHistoryOpen(true)}>Bu Ayın Veri Analizi</button>
+          <button className="hero-action-btn" onClick={() => setIsHistoryOpen(true)}>Ekonomi Verileri</button>
         </div>
 
         {/* Circular Actions */}
@@ -307,8 +355,8 @@ function App() {
           <button className="ai-chat-btn" onClick={handleGeneralChat}>
             Bodo Asistan'a sor!
           </button>
-          <div className="ai-footer-link" onClick={() => handleDetailClick('income')}>
-            Bu ayın gelir gider dağılımını görmek için <span>Tıkla →</span>
+          <div className="ai-footer-link" onClick={handleMonthlyAnalysis}>
+            Bu ayın veri analizini görmek için <span>tıkla →</span>
           </div>
         </div>
 
@@ -345,6 +393,13 @@ function App() {
           })}
         </div>
       </div>
+
+      {isSalesTableOpen && (
+        <SalesTable
+          data={user}
+          onClose={() => setIsSalesTableOpen(false)}
+        />
+      )}
 
       {isHistoryOpen && (
         <DataHistory
