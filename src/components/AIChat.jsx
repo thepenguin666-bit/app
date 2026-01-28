@@ -56,10 +56,15 @@ const AIChat = ({
         setInput('');
         setIsLoading(true);
 
-        const aiResponseText = await sendMessageToAI(userText, activeContext, user);
-
-        onUpdateHistory([...newHistory, { role: 'assistant', content: aiResponseText }]);
-        setIsLoading(false);
+        try {
+            const aiResponseText = await sendMessageToAI(userText, activeContext, user);
+            onUpdateHistory([...newHistory, { role: 'assistant', content: aiResponseText }]);
+        } catch (error) {
+            console.error('Chat Error:', error);
+            onUpdateHistory([...newHistory, { role: 'assistant', content: "Üzgünüm, şu an yanıt veremiyorum. Lütfen internet bağlantınızı kontrol edin veya daha sonra tekrar deneyin." }]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

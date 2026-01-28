@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import AIChat from './components/AIChat'
 import Login from './components/Login'
+import Register from './components/Register'
+import Onboarding from './components/Onboarding'
 import DataHistory from './components/DataHistory'
 import { weeklyReports } from './data/weeklyReports'
 import { userProfile } from './data/userProfile'
@@ -43,16 +45,97 @@ const sections = [
 ]
 
 function App() {
-  const [chatSessions, setChatSessions] = useState([])
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('growth_ai_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [allUsers, setAllUsers] = useState(() => {
+    const saved = localStorage.getItem('growth_ai_all_users');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [chatSessions, setChatSessions] = useState(() => {
+    const saved = localStorage.getItem('growth_ai_chats');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [activeSessionId, setActiveSessionId] = useState(null)
-  const [activeSection, setActiveSection] = useState(null) // Start hidden
+  const [activeSection, setActiveSection] = useState(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatInitialContext, setChatInitialContext] = useState(null)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-  const [user, setUser] = useState(null) // Restore Login
 
-  if (!user) {
-    return <Login onLogin={setUser} />
+  const [currentView, setCurrentView] = useState(() => {
+    const savedUser = localStorage.getItem('growth_ai_user');
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      return (parsed.productList && parsed.productList.length > 0) ? 'dashboard' : 'onboarding';
+    }
+    return 'login';
+  });
+
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('growth_ai_all_users', JSON.stringify(allUsers));
+  }, [allUsers]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('growth_ai_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('growth_ai_user');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem('growth_ai_chats', JSON.stringify(chatSessions));
+  }, [chatSessions]);
+
+  if (currentView === 'login' && !user) {
+    return <Login
+      allUsers={allUsers}
+      onLogin={(u) => {
+        setUser(u);
+        const hasData = u.productList && u.productList.length > 0;
+        setCurrentView(hasData ? 'dashboard' : 'onboarding');
+      }}
+      onShowRegister={() => setCurrentView('register')}
+    />
+  }
+
+  if (currentView === 'register') {
+    return <Register
+      onRegister={(regData) => {
+        setUser(regData);
+        setAllUsers(prev => {
+          if (!prev.find(u => u.businessName === regData.businessName)) {
+            return [...prev, regData];
+          }
+          return prev;
+        });
+        setCurrentView('onboarding');
+      }}
+      onBackToLogin={() => setCurrentView('login')}
+    />
+  }
+
+  if (currentView === 'onboarding') {
+    return <Onboarding
+      onComplete={(onboardData) => {
+        const updatedUser = { ...user, ...onboardData };
+        setUser(updatedUser);
+        setAllUsers(prev => prev.map(u =>
+          u.businessName === user.businessName ? updatedUser : u
+        ));
+        setCurrentView('dashboard');
+      }}
+    />
+  }
+
+  if (!user && currentView === 'dashboard') {
+    setCurrentView('login');
+    return null;
   }
 
   // Helper to create a new session
@@ -103,12 +186,23 @@ function App() {
     setIsChatOpen(true);
   }
 
+  const handleLogout = () => {
+    localStorage.clear();
+    setUser(null);
+    setChatSessions([]);
+    setCurrentView('login');
+    setActiveSection(null);
+    setIsChatOpen(false);
+    setIsHistoryOpen(false);
+  };
+
   // Get active session data
   const activeSession = chatSessions.find(s => s.id === activeSessionId) || { messages: [] };
 
   return (
     <div className="app-container">
       <header className="header">
+        <button className="logout-btn-header" onClick={handleLogout}>Çıkış Yap</button>
         <h1>AI Business Growth</h1>
         <p style={{ color: 'var(--primary-gold)', marginTop: '5px' }}>
           Hoşgeldiniz, {user.businessName}
@@ -160,8 +254,9 @@ function App() {
             <button
               className="action-btn"
               onClick={() => setIsHistoryOpen(true)}
+              style={{ background: 'var(--gold-gradient)', color: '#000', fontWeight: 'bold' }}
             >
-              Haftalık Veri Analizi
+              Aylık Veri Analizi
             </button>
           </div>
         </div>
@@ -170,7 +265,12 @@ function App() {
       {isHistoryOpen && (
         <DataHistory
           data={user}
-          onUpdate={setUser}
+          onUpdate={(updatedUser) => {
+            setUser(updatedUser);
+            setAllUsers(prev => prev.map(u =>
+              u.businessName === user.businessName ? updatedUser : u
+            ));
+          }}
           onClose={() => setIsHistoryOpen(false)}
         />
       )}

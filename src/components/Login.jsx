@@ -1,26 +1,33 @@
 import { useState } from 'react';
 import { userProfile } from '../data/userProfile';
+import logo from '../assets/logo.png';
 
-const Login = ({ onLogin }) => {
+const Login = ({ allUsers, onLogin, onShowRegister }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
     const handleLogin = (e) => {
         e.preventDefault();
-        // Mock validation - accepts any password for now if username matches or is empty for demo
-        if (username.toLowerCase() === 'inci bar' || username.toLowerCase() === 'incibar') {
+
+        // Check registered users
+        const existingUser = (allUsers || []).find(u => u.businessName.toLowerCase() === username.toLowerCase());
+
+        if (existingUser) {
+            onLogin(existingUser);
+        } else if (username.toLowerCase() === 'inci bar' || username.toLowerCase() === 'incibar') {
+            // Hardcoded fallback for demo
             onLogin(userProfile);
         } else {
-            setError('Kullanıcı bulunamadı. (Demo: "İnci Bar" yazın)');
+            setError('Kullanıcı bulunamadı. (Kayıt olduğunuz işletme adını girin)');
         }
     };
 
     return (
         <div className="login-container">
             <div className="login-card">
-                <h1 className="login-title">AI Business Growth</h1>
-                <p className="login-subtitle">Geleceği Tasarlayın</p>
+                <h1 className="login-title">BODO</h1>
+                <p className="login-subtitle">Geleceğin İşletme Koçu</p>
 
                 <form onSubmit={handleLogin} className="login-form">
                     <div className="input-group">
@@ -48,6 +55,16 @@ const Login = ({ onLogin }) => {
                         Giriş Yap
                     </button>
                 </form>
+
+                <p style={{ marginTop: '20px', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
+                    Hesabınız yok mu? {' '}
+                    <span
+                        onClick={onShowRegister}
+                        style={{ color: 'var(--primary-gold)', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                        Kaydol
+                    </span>
+                </p>
             </div>
         </div>
     );

@@ -4,8 +4,8 @@
   --bg-dark: #0a0a0c;
   --bg-accent: #16161a;
   --primary-gold: #c5a059;
-  --gold-gradient: linear-gradient(135deg, #b8860b 0%, #dec089 50%, #8b6b1d 100%);
-  --gold-glow: 0 8px 30px rgba(197, 160, 89, 0.25);
+  --gold-gradient: linear-gradient(135deg, #d4af37 0%, #f9e4b7 50%, #b8860b 100%);
+  --gold-glow: 0 10px 40px rgba(184, 134, 11, 0.3);
   --secondary-blue: #4a90e2;
   --text-main: #ffffff;
   --text-dim: rgba(255, 255, 255, 0.6);
@@ -40,16 +40,41 @@ body {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   width: 100%;
   padding: 20px;
   gap: 20px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .header {
   text-align: center;
   margin-top: 20px;
   animation: slideDown 0.8s ease-out;
+  position: relative;
+}
+
+.logout-btn-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.logout-btn-header:hover {
+  background: #ff6b6b;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
 }
 
 .header h1 {
@@ -63,28 +88,29 @@ body {
 
 .button-grid {
   display: flex;
-  flex: 1;
+  flex: none;
   gap: 15px;
   margin-bottom: 20px;
 }
 
 .nav-button {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background: var(--glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
-  padding: 20px;
+  padding: 30px 20px;
   cursor: pointer;
   transition: var(--transition);
   position: relative;
   overflow: hidden;
   text-align: center;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .nav-button::before {
@@ -105,7 +131,7 @@ body {
   color: #000;
   border-color: transparent;
   transform: translateY(-8px);
-  box-shadow: var(--gold-glow);
+  box-shadow: var(--gold-glow), inset 0 2px 8px rgba(255, 255, 255, 0.4), inset 0 -2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .nav-button:hover::before {
@@ -116,13 +142,14 @@ body {
   background: var(--gold-gradient);
   color: #000;
   border-color: transparent;
-  box-shadow: var(--gold-glow);
+  box-shadow: var(--gold-glow), inset 0 2px 8px rgba(255, 255, 255, 0.4), inset 0 -2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .nav-button .icon {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
+  font-size: 4.5rem;
+  margin-bottom: 20px;
   transition: var(--transition);
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
 }
 
 .nav-button h3 {
@@ -168,7 +195,8 @@ body {
 }
 
 .content-area {
-  flex: 2;
+  flex: none;
+  /* Changed from flex: 2 to prevent stretching */
   background: var(--glass);
   border-radius: 32px;
   border: 1px solid var(--glass-border);
@@ -176,9 +204,47 @@ body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   animation: slideDown 0.5s ease-out forwards;
-  /* Apply slide down animation */
   display: flex;
   flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.section-description {
+  color: var(--text-dim);
+  margin-bottom: 20px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.detail-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  padding: 15px 20px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.detail-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-gold);
+  transform: translateX(5px);
+}
+
+.detail-bullet {
+  color: var(--primary-gold);
+  font-size: 1.2rem;
 }
 
 /* Data History Styles */
@@ -357,13 +423,15 @@ body {
 }
 
 .login-title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 10px;
-  background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+  font-size: 4rem;
+  font-weight: 900;
+  margin-bottom: 5px;
+  letter-spacing: -2px;
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 20px rgba(184, 134, 11, 0.2));
 }
 
 .login-subtitle {
