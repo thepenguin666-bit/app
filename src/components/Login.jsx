@@ -29,8 +29,18 @@ const Login = ({ allUsers, onLogin, onShowRegister }) => {
     return (
         <div className="login-container">
             <div className="login-card">
-                <h1 className="login-title">BODO</h1>
-                <p className="login-subtitle">Geleceğin İşletme Koçu</p>
+                {/* Logo Replacement */}
+                <img
+                    src="/BODO.svg"
+                    alt="BODO"
+                    className="login-logo"
+                    style={{
+                        width: '200px',
+                        marginBottom: '10px',
+                        filter: 'drop-shadow(0 0 10px rgba(197, 160, 89, 0.2))'
+                    }}
+                />
+                <p className="login-subtitle" style={{ color: 'var(--primary-gold)', fontWeight: '600' }}>AI destekli İşletme Profili</p>
 
                 <form onSubmit={handleLogin} className="login-form">
                     <div className="input-group">
@@ -54,7 +64,16 @@ const Login = ({ allUsers, onLogin, onShowRegister }) => {
 
                     {error && <p className="error-message">{error}</p>}
 
-                    <button type="submit" className="login-btn">
+                    <button
+                        type="submit"
+                        className="login-btn"
+                        style={{
+                            background: 'var(--primary-gold)', // Flat gold palette
+                            boxShadow: 'none', // No glow
+                            transform: 'none', // Remove hover lift if desired, or keep it. User said 'no glow' specifically.
+                            filter: 'none' // Remove brightness filter on hover if conflicting
+                        }}
+                    >
                         Giriş Yap
                     </button>
                 </form>

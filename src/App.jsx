@@ -367,26 +367,57 @@ Kar marjınızı artırmak için düşük performanslı ürünlerde kampanya yap
             { id: 1, name: 'Rotring xyz', price: 190, cost: 40, quantity: 24 },
             { id: 2, name: 'Mona Lisa Defter', price: 390, cost: 30, quantity: 10 },
             { id: 3, name: 'XYZ oyuncakk', price: 710, cost: 50, quantity: 2 },
-          ]).map(p => {
+          ]).map((p, index) => {
             // Calculate fake trend for demo
             const isPos = p.price > 300;
-            const cost = Number(p.cost) || 0;
-            const unitProfit = Number(p.price) - cost; // Simplified if cost is absolute, or p.price * (1 - p.cost/100)
-            // Assuming p.cost is percentage based on previous logic, but let's use a safe calc
             const total = Number(p.price) * Number(p.quantity);
 
             return (
-              <div key={p.id} className="product-item">
-                <div className="product-icon-circle" style={{ fontSize: '1.5rem' }}>+</div>
-                <div className="product-info">
-                  <div className="product-name">{p.name}</div>
-                  <div className="product-meta">Kalan stok: {Math.floor(Math.random() * 50) + 5}</div>
-                </div>
-                <div className="product-values">
-                  <div className="product-total">{p.quantity} adet / ₺{total.toLocaleString('tr-TR')}</div>
-                  <div className={isPos ? "product-trend trend-pos" : "product-trend trend-neg"}>
-                    (bu ay) {isPos ? '▲ %15' : '▼ %10'}
+              <div key={p.id || index} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '15px',
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.05)',
+                marginBottom: '10px'
+              }}>
+                {/* Left: Icon + Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* Circle Icon */}
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                    📦
                   </div>
+
+                  {/* Text Block - Italicized, Left Aligned */}
+                  <div style={{ display: 'flex', flexDirection: 'column', fontStyle: 'italic', alignItems: 'flex-start', textAlign: 'left' }}>
+                    <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#fff', textAlign: 'left' }}>{p.name}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', textAlign: 'left' }}>
+                      Stok: {p.stock || (Math.floor(Math.random() * 50) + 5)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right: Price/Quantity Info */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                    {p.quantity} adet / ₺{total.toLocaleString('tr-TR')}
+                  </span>
+
+                  <span style={{ fontSize: '0.8rem', color: isPos ? '#4cd137' : '#ff6b6b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    (bu ay) <span style={{ fontSize: '0.7rem' }}>{isPos ? '▲' : '▼'}</span> %{Math.floor(Math.random() * 15) + 5}
+                  </span>
                 </div>
               </div>
             );
