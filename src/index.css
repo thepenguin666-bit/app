@@ -943,10 +943,10 @@ body {
   background: linear-gradient(135deg, #1e1e24 0%, #121214 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 20px;
+  padding: 20px 20px 12px 20px;
   position: relative;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
 }
 
 .ai-hint-text {

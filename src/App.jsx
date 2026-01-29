@@ -5,7 +5,7 @@ import Login from './components/Login'
 import Register from './components/Register'
 import Onboarding from './components/Onboarding'
 import DataHistory from './components/DataHistory'
-import SalesTable from './components/SalesTable' // 1. Import SalesTable
+import SalesTable from './components/SalesTable'
 
 import { weeklyReports } from './data/weeklyReports'
 import { userProfile } from './data/userProfile'
@@ -45,6 +45,44 @@ const sections = [
     ]
   }
 ]
+
+// Shared Mock History Data (Sync with DataHistory.jsx)
+const MOCK_HISTORY_DATA = [
+  {
+    id: 'hist_1',
+    dateLabel: '01.01.2026',
+    rent: '15000',
+    totalSalaries: '45000',
+    otherExpenses: '3200',
+    productList: [
+      { id: 101, name: 'Eski Sezon Defter', price: 120, cost: 30, quantity: 15, stock: 54 },
+      { id: 102, name: '2025 Kalem Seti', price: 250, cost: 80, quantity: 40, stock: 12 }
+    ],
+    additionalExpenses: [
+      {
+        id: 999, title: 'Yılbaşı Süslemesi', items: [
+          { id: 1, name: 'Işıklar', cost: 1200 },
+          { id: 2, name: 'Dekor', cost: 800 }
+        ]
+      }
+    ]
+  }
+];
+
+// Helper to calculate Net Profit for a given data object
+const calculatePeriodNetProfit = (data) => {
+  if (!data) return 0;
+
+  const totalRevenue = (data.productList || []).reduce((acc, p) => acc + (Number(p.price) * Number(p.quantity)), 0);
+  const totalCOGS = (data.productList || []).reduce((acc, p) => acc + (Number(p.cost || 0) * Number(p.quantity)), 0);
+
+  const fixedExpenses = Number(data.rent || 0) + Number(data.totalSalaries || 0) + Number(data.otherExpenses || 0);
+  const additionalExpenses = (data.additionalExpenses || []).reduce((acc, cat) =>
+    acc + (cat.items || []).reduce((sum, item) => sum + Number(item.cost), 0), 0);
+
+  const totalExpenses = fixedExpenses + additionalExpenses + totalCOGS;
+  return totalRevenue - totalExpenses;
+};
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -96,6 +134,26 @@ function App() {
   useEffect(() => {
     localStorage.setItem('growth_ai_chats', JSON.stringify(chatSessions));
   }, [chatSessions]);
+
+  // -- Dynamic Average Income Calculation --
+  const currentNetProfit = calculatePeriodNetProfit(user);
+
+  // Use real history or mock if empty
+  const historySource = (user?.history && user.history.length > 0) ? user.history : MOCK_HISTORY_DATA;
+
+  // Calculate total profit from history
+  const historyTotalProfit = historySource.reduce((acc, period) => acc + calculatePeriodNetProfit(period), 0);
+
+  // Average = (Current + History Sum) / (1 + History Count)
+  const totalMonths = 1 + historySource.length;
+  const averageMonthlyIncome = (currentNetProfit + historyTotalProfit) / totalMonths;
+
+  // -- Trend Calculation for Hero --
+  const lastHistoryEntry = historySource[historySource.length - 1];
+  const previousNetProfit = calculatePeriodNetProfit(lastHistoryEntry);
+  const profitDiff = currentNetProfit - previousNetProfit;
+  const profitTrendPercent = previousNetProfit !== 0 ? ((Math.abs(profitDiff) / Math.abs(previousNetProfit)) * 100).toFixed(1) : 0;
+  const isTrendPositive = profitDiff >= 0;
 
   if (currentView === 'login' && !user) {
     return <Login
@@ -230,7 +288,10 @@ function App() {
 
     // Generate Initial AI Analysis
     const totalRevenue = (user.productList || []).reduce((acc, p) => acc + (Number(p.price) * Number(p.quantity)), 0);
-    const totalExpenses = Number(user.rent || 0) + Number(user.totalSalaries || 0) + Number(user.otherExpenses || 0) + (user.additionalExpenses || []).reduce((acc, cat) => acc + (cat.items || []).reduce((sum, item) => sum + Number(item.cost), 0), 0);
+    const totalCOGS = (user.productList || []).reduce((acc, p) => acc + (Number(p.cost || 0) * Number(p.quantity)), 0);
+    const fixedExpenses = Number(user.rent || 0) + Number(user.totalSalaries || 0) + Number(user.otherExpenses || 0) + (user.additionalExpenses || []).reduce((acc, cat) => acc + (cat.items || []).reduce((sum, item) => sum + Number(item.cost), 0), 0);
+
+    const totalExpenses = fixedExpenses + totalCOGS;
     const netProfit = totalRevenue - totalExpenses;
     const topProduct = (user.productList || []).sort((a, b) => b.quantity - a.quantity)[0];
 
@@ -322,10 +383,15 @@ Kar marjınızı artırmak için düşük performanslı ürünlerde kampanya yap
         {/* Custom Dashboard Hero */}
         <div className="dashboard-hero">
           <div className="hero-label">Aylık ortalama net gelir</div>
-          <div className="hero-value">₺{user.totalProfit || "63.345,67"}</div>
+          {/* Dynamic Average Income Display */}
+          <div className="hero-value">₺{averageMonthlyIncome.toLocaleString('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</div>
           <div className="hero-trend">
-            <span>+8.987,97</span>
-            <span className="trend-text-dim">( bu ay <span className="trend-highlight">+%5.7</span> artış )</span>
+            <span>{isTrendPositive ? '+' : ''}{profitDiff.toLocaleString('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</span>
+            <span className="trend-text-dim">
+              ( bu ay <span className="trend-highlight" style={{ color: isTrendPositive ? '#4cd137' : '#ff6b6b' }}>
+                {isTrendPositive ? '+' : ''}{profitTrendPercent}%
+              </span> {isTrendPositive ? 'artış' : 'azalış'} )
+            </span>
           </div>
           <button className="hero-action-btn" onClick={() => setIsHistoryOpen(true)}>Ekonomi Verileri</button>
         </div>
@@ -368,20 +434,48 @@ Kar marjınızı artırmak için düşük performanslı ürünlerde kampanya yap
             { id: 2, name: 'Mona Lisa Defter', price: 390, cost: 30, quantity: 10 },
             { id: 3, name: 'XYZ oyuncakk', price: 710, cost: 50, quantity: 2 },
           ]).map((p, index) => {
-            // Calculate fake trend for demo
-            const isPos = p.price > 300;
-            const total = Number(p.price) * Number(p.quantity);
+
+            // Calculate real trend based on history
+            const history = (user.history && user.history.length > 0) ? user.history : MOCK_HISTORY_DATA;
+
+            // Find the most recent history entry for comparison
+            // In DataHistory.jsx, it uses `DataHistory[0]` as previous.
+            // If user.history is verified sorted, last item is usually newest.
+            const isMock = history === MOCK_HISTORY_DATA;
+            // IMPORTANT: If mock, select [0]. If real, select [last].
+            const prevHistory = isMock ? history[0] : history[history.length - 1];
+
+            // Loose matching: Match by name OR by ID if available
+            const prevProduct = prevHistory?.productList?.find(hp =>
+              (hp.name && p.name && hp.name.trim().toLowerCase() === p.name.trim().toLowerCase()) ||
+              (hp.id && p.id && hp.id == p.id)
+            );
+
+            const currentTotal = Number(p.price) * Number(p.quantity);
+            let percentChange = 0;
+            let isPositive = false;
+            let hasHistory = false;
+
+            if (prevProduct) {
+              const prevTotal = Number(prevProduct.price) * Number(prevProduct.quantity);
+              if (prevTotal > 0) {
+                const diff = currentTotal - prevTotal;
+                percentChange = Math.round((Math.abs(diff) / prevTotal) * 100);
+                isPositive = diff >= 0;
+                hasHistory = true;
+              }
+            }
 
             return (
               <div key={p.id || index} style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '15px',
+                padding: '10px 15px',
                 background: 'rgba(255,255,255,0.03)',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 border: '1px solid rgba(255,255,255,0.05)',
-                marginBottom: '10px'
+                marginBottom: '8px'
               }}>
                 {/* Left: Icon + Info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -412,70 +506,97 @@ Kar marjınızı artırmak için düşük performanslı ürünlerde kampanya yap
                 {/* Right: Price/Quantity Info */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                   <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                    {p.quantity} adet / ₺{total.toLocaleString('tr-TR')}
+                    {p.quantity} adet / ₺{currentTotal.toLocaleString('tr-TR')}
                   </span>
 
-                  <span style={{ fontSize: '0.8rem', color: isPos ? '#4cd137' : '#ff6b6b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    (bu ay) <span style={{ fontSize: '0.7rem' }}>{isPos ? '▲' : '▼'}</span> %{Math.floor(Math.random() * 15) + 5}
-                  </span>
+                  {hasHistory ? (
+                    <span style={{ fontSize: '0.8rem', color: isPositive ? '#4cd137' : '#ff6b6b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      (bu ay) <span style={{ fontSize: '0.7rem' }}>{isPositive ? '▲' : '▼'}</span> %{percentChange}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      (yeni ürün)
+                    </span>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
+        {isSalesTableOpen && (
+          <SalesTable
+            data={user}
+            onClose={() => setIsSalesTableOpen(false)}
+          />
+        )}
+
+        {
+          isHistoryOpen && (
+            <DataHistory
+              data={user}
+              historyData={MOCK_HISTORY_DATA}
+              onUpdate={(updatedUser) => {
+                setUser(updatedUser);
+                setAllUsers(prev => prev.map(u =>
+                  (u.id && u.id === updatedUser.id) || (u.businessName === user.businessName) ? updatedUser : u
+                ));
+              }}
+              onArchive={(newArchiveItem) => {
+                const updatedHistory = [...(user.history || []), newArchiveItem];
+                // Reset current month quantities for a fresh start, but keep products
+                const resetProductList = (user.productList || []).map(p => ({ ...p, quantity: 0 }));
+
+                const updatedUser = {
+                  ...user,
+                  history: updatedHistory,
+                  productList: resetProductList
+                };
+
+                setUser(updatedUser);
+                setAllUsers(prev => prev.map(u =>
+                  (u.id && u.id === updatedUser.id) || (u.businessName === user.businessName) ? updatedUser : u
+                ));
+              }}
+              onClose={() => setIsHistoryOpen(false)}
+            />
+          )
+        }
+
+        {
+          isChatOpen && (
+            <AIChat
+              activeContext={activeSection?.id || 'general'}
+              initialContext={chatInitialContext}
+              user={user}
+              sessions={chatSessions}
+              activeSessionId={activeSessionId}
+              onSwitchSession={(id) => setActiveSessionId(id)}
+              onNewSession={() => {
+                const context = activeSession.context || chatInitialContext;
+                let initialMessages = [];
+                if (context?.type === 'report') {
+                  const reportContent = weeklyReports[context.topic] || "Rapor yükleniyor...";
+                  initialMessages = [
+                    { role: 'assistant', content: reportContent },
+                    { role: 'assistant', content: "Bu haftaki raporunuz bu şekilde. Herhangi bir sorunuz var mı?" }
+                  ];
+                }
+                createNewSession(context, initialMessages);
+              }}
+              currentMessages={activeSession.messages}
+              onUpdateHistory={(newMessages) => {
+                setChatSessions(prev => prev.map(session =>
+                  session.id === activeSessionId
+                    ? { ...session, messages: newMessages }
+                    : session
+                ));
+              }}
+              onClose={() => setIsChatOpen(false)}
+            />
+          )
+        }
       </div>
-
-      {isSalesTableOpen && (
-        <SalesTable
-          data={user}
-          onClose={() => setIsSalesTableOpen(false)}
-        />
-      )}
-
-      {isHistoryOpen && (
-        <DataHistory
-          data={user}
-          onUpdate={(updatedUser) => {
-            setUser(updatedUser);
-            setAllUsers(prev => prev.map(u =>
-              (u.id && u.id === updatedUser.id) || (u.businessName === user.businessName) ? updatedUser : u
-            ));
-          }}
-          onClose={() => setIsHistoryOpen(false)}
-        />
-      )}
-
-      {isChatOpen && (
-        <AIChat
-          activeContext={activeSection?.id || 'general'}
-          initialContext={chatInitialContext}
-          user={user}
-          sessions={chatSessions}
-          activeSessionId={activeSessionId}
-          onSwitchSession={(id) => setActiveSessionId(id)}
-          onNewSession={() => {
-            const context = activeSession.context || chatInitialContext;
-            let initialMessages = [];
-            if (context?.type === 'report') {
-              const reportContent = weeklyReports[context.topic] || "Rapor yükleniyor...";
-              initialMessages = [
-                { role: 'assistant', content: reportContent },
-                { role: 'assistant', content: "Bu haftaki raporunuz bu şekilde. Herhangi bir sorunuz var mı?" }
-              ];
-            }
-            createNewSession(context, initialMessages);
-          }}
-          currentMessages={activeSession.messages}
-          onUpdateHistory={(newMessages) => {
-            setChatSessions(prev => prev.map(session =>
-              session.id === activeSessionId
-                ? { ...session, messages: newMessages }
-                : session
-            ));
-          }}
-          onClose={() => setIsChatOpen(false)}
-        />
-      )}
     </div>
   )
 }
